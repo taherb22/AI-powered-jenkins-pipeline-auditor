@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: flask-webhook-app
+    env: python
+    plan: free # Or your preferred plan
+    region: oregon # Or your preferred region
+    buildCommand: |
+      pip install --upgrade pip
+      pip install poetry
+      poetry install --no-root --no-dev
+    startCommand: "poetry run gunicorn ai_powered_jenkins_auditor.app:app"
+    healthCheckPath: /health # Optional but recommended
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.4" # Match your .python-version
+      - key: GUNICORN_CMD_ARGS
+        value: "--workers 4"
+      - key: WEB_CONCURRENCY
+        value: "4"
