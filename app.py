@@ -94,3 +94,10 @@ def github_webhook():
                 print("🟡 Jenkinsfile not found in PR.")
 
     return "", 204
+
+
+
+@app.errorhandler(404)
+def not_found(e):
+    print("❌ Flask received an unknown route")
+    return "Not found", 404
