@@ -9,7 +9,7 @@ packages = [{include = "ai_powered_jenkins_auditor"}]
 
 [tool.poetry.dependencies]
 python = "3.11.9"
-tree-sitter = "^0.24.0"
+tree-sitter = "^0.24.0" 
 tree-sitter-groovy = "^0.1.2"
 flask = "^3.1.1"
 pyngrok = "^7.2.12"
