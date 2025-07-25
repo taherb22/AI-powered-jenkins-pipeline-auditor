@@ -14,23 +14,13 @@ GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET")
 def verify_github_signature(secret: str, payload: bytes, signature_header: str) -> bool:
     """
     Verifies the GitHub HMAC signature.
-
-    Args:
-        secret (str): Webhook secret configured in GitHub
-        payload (bytes): Raw request body
-        signature_header (str): X-Hub-Signature-256 header value
-
-    Returns:
-        bool: True if signature is valid
     """
     if not signature_header:
         return False
-
     try:
         algo, received_sig = signature_header.split('=')
     except ValueError:
         return False
-
     if algo != 'sha256':
         return False
 
@@ -45,14 +35,7 @@ def verify_github_signature(secret: str, payload: bytes, signature_header: str) 
 
 def fetch_jenkinsfile(repo_full_name: str, commit_sha: str) -> str | None:
     """
-    Fetches the Jenkinsfile content from GitHub via the API.
-
-    Args:
-        repo_full_name (str): e.g., 'user/repo'
-        commit_sha (str): Commit SHA to target the correct version
-
-    Returns:
-        str or None: Jenkinsfile content if successful
+    Fetches the Jenkinsfile content from GitHub.
     """
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -65,12 +48,17 @@ def fetch_jenkinsfile(repo_full_name: str, commit_sha: str) -> str | None:
     if response.status_code == 200:
         return response.text
     else:
-        print(f"❌ Failed to fetch Jenkinsfile: {response.status_code}")
+        print(f"❌ Failed to fetch Jenkinsfile: {response.status_code} - {response.text}")
         return None
 
 
-@app.route("/webhook", methods=["POST"])
+@app.route("/", methods=["GET", "POST"])
 def github_webhook():
+    print(f"👉 Received {request.method} request to /")
+
+    if request.method == "GET":
+        return "👋 Webhook is live!", 200
+
     signature = request.headers.get("X-Hub-Signature-256", "")
     payload = request.get_data()
 
@@ -86,14 +74,17 @@ def github_webhook():
         print("❌ Failed to decode JSON.")
         abort(400)
 
+    print(f"📦 Event: {request.headers.get('X-GitHub-Event')}")
+    print(f"📄 Payload: {json.dumps(data, indent=2)}")
+
     event = request.headers.get("X-GitHub-Event")
 
     # Step 3: Handle Pull Request event
     if event == "pull_request":
         action = data.get("action")
-        if action in ["opened", "synchronize", "reopened"]: 
-            repo_name = data["repository"]["full_name"]             
-            commit_sha = data["pull_request"]["head"]["sha"]        
+        if action in ["opened", "synchronize", "reopened"]:
+            repo_name = data["repository"]["full_name"]
+            commit_sha = data["pull_request"]["head"]["sha"]
 
             jenkinsfile_content = fetch_jenkinsfile(repo_name, commit_sha)
             if jenkinsfile_content:
