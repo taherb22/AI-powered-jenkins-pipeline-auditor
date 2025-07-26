@@ -4,7 +4,8 @@ import hashlib
 import json
 from flask import Flask, request, abort
 import requests
-
+import base64
+from datetime import datetime
 app = Flask(__name__)
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -85,16 +86,52 @@ def github_webhook():
         if action in ["opened", "synchronize", "reopened"]:
             repo_name = data["repository"]["full_name"]
             commit_sha = data["pull_request"]["head"]["sha"]
+            pr_number = data["pull_request"]["number"]
 
             jenkinsfile_content = fetch_jenkinsfile(repo_name, commit_sha)
             if jenkinsfile_content:
                 print("✅ Jenkinsfile Content from PR:")
                 print(jenkinsfile_content)
+                push_log_to_repo(pr_number, jenkinsfile_content)
             else:
                 print("🟡 Jenkinsfile not found in PR.")
 
     return "", 204
 
+
+
+def push_log_to_repo(pr_number: int, log_content: str):
+    logs_repo = os.environ.get("LOGS_REPO")
+    token = os.environ.get("LOGS_PAT")
+    if not logs_repo or not token:
+        print("❌ Missing LOGS_REPO or LOGS_PAT in env vars.")
+        return
+
+    # e.g., logs/pr_42_2025-07-25T14:22.txt
+    timestamp = datetime.utcnow().isoformat(timespec="seconds").replace(":", "-")
+    filename = f"logs/pr_{pr_number}_{timestamp}.txt"
+
+    url = f"https://api.github.com/repos/{logs_repo}/contents/{filename}"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    # GitHub expects base64-encoded content
+    encoded_content = base64.b64encode(log_content.encode("utf-8")).decode("utf-8")
+
+    payload = {
+        "message": f"Add audit log for PR #{pr_number}",
+        "content": encoded_content,
+        "branch": "main"  # adjust if using a different branch
+    }
+
+    resp = requests.put(url, headers=headers, json=payload)
+
+    if resp.status_code in [200, 201]:
+        print(f"✅ Log pushed to {filename}")
+    else:
+        print(f"❌ Failed to push log: {resp.status_code} - {resp.text}")
 
 
 @app.errorhandler(404)
