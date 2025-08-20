@@ -1,0 +1,29 @@
+// Purpose: A valid, secure file that should pass most checks.
+pipeline {
+    agent any
+    environment {
+        DEPLOY_ENV = 'staging'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'pytest tests/'
+            }
+        }
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([string(credentialsId: 'deploy-token', variable: 'TOKEN')]) {
+                    sh 'curl -H "Authorization: Bearer $TOKEN" https://api.example.com/deploy'
+                }
+            }
+        }
+    }
+}
