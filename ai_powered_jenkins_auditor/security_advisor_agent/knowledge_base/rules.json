@@ -1,0 +1,128 @@
+[
+  {
+    "rule_id": "CWE-798",
+    "title": "Use of Hard-Coded Credentials",
+    "source": "CWE Top 25 / OWASP CI/CD #2",
+    "description": "This weakness applies ONLY when a literal string in the code is clearly a secret (e.g., 's3cr3t-p@ssw0rd', 'AKIA...', 'ghp_...'). It does NOT apply to variables (like `$VAR` or `${VAR}`).",
+    "risk": "If the Jenkinsfile is compromised, an attacker can easily extract these credentials, leading to unauthorized access to external services.",
+    "jenkins_remediation": "Use the Jenkins Credentials Plugin. Secrets can be safely injected using the `credentials()` helper or the `withCredentials` wrapper.",
+    "code_example": "environment {\n    API_KEY = 'ghp_abcdef1234567890abcdef1234567890'\n}",
+    "cvss_score": "9.8 (Critical)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+  },
+  {
+    "rule_id": "CWE-78",
+    "title": "OS Command Injection",
+    "source": "CWE Top 25 / OWASP Top 10",
+    "description": "This weakness applies ONLY when a Jenkins parameter (formatted as `${params.PARAMETER_NAME}`) is used directly in a `sh` step or an `environment` variable. This is a high-risk pattern because the parameter value is not sanitized.",
+    "risk": "An attacker can provide a malicious string as a parameter (e.g., 'main; rm -rf /') to execute arbitrary commands on the Jenkins agent.",
+    "jenkins_remediation": "Never use `${params.*}` directly. For secrets, ALWAYS use the `withCredentials` block. For non-secret parameters, pass them to scripts as arguments and sanitize them within the script.",
+    "code_example": "environment {\n    DANGEROUS_VAR = \"${params.USER_INPUT}\"\n}",
+    "cvss_score": "9.8 (Critical)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+  },
+  {
+    "rule_id": "JENKINS-BP-01",
+    "title": "Insecure Agent 'any'",
+    "source": "Jenkins Best Practices",
+    "description": "This weakness occurs when the global `agent` directive is set to `any`, allowing the pipeline to run on any available agent.",
+    "risk": "An attacker could register a malicious agent with the Jenkins master. If a pipeline with `agent any` runs on this malicious agent, the attacker could steal secrets or tamper with the build process.",
+    "jenkins_remediation": "Always specify the most restrictive agent possible, such as a specific label or a Docker image. Example: `agent { label 'linux-build-nodes' }`",
+    "code_example": "pipeline {\n    agent any\n    ...\n}",
+    "cvss_score": "8.7 (High)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+  },
+  {
+    "rule_id": "OWASP-CICD-08",
+    "title": "Privileged Docker Access",
+    "source": "OWASP CI/CD #8 - Insecure System Configuration",
+    "description": "This weakness occurs when a Jenkins pipeline executes a Docker container with excessive privileges, such as using the `--privileged` flag or mounting the host's Docker socket (`/var/run/docker.sock`).",
+    "risk": "Granting excessive privileges to a container dramatically increases the attack surface. An attacker who compromises the container can potentially 'escape' to the underlying host agent, gaining full control of the machine.",
+    "jenkins_remediation": "Avoid using `--privileged` whenever possible. Instead, grant only the specific Linux capabilities the container needs using the `--cap-add` flag. Avoid mounting the Docker socket directly.",
+    "code_example": "steps {\n    sh 'docker run --privileged -v /var/run/docker.sock:/var/run/docker.sock my-image'\n}",
+    "cvss_score": "9.1 (Critical)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:N/SA:N"
+  },
+  {
+    "rule_id": "OWASP-CICD-06",
+    "title": "Component with Known Vulnerabilities",
+    "source": "OWASP CI/CD #6 - Insecure Dependencies",
+    "description": "This weakness occurs when the pipeline uses a software component, such as a Docker image, with a specific version that has publicly disclosed security vulnerabilities (CVEs).",
+    "risk": "Attackers actively scan for and exploit known vulnerabilities. Using an outdated component can expose the build environment to a wide range of attacks, including remote code execution or denial of service.",
+    "jenkins_remediation": "Regularly scan all dependencies for known vulnerabilities using tools like Trivy or Snyk. Pin dependencies to the latest patched and secure version.",
+    "code_example": "agent {\n    docker {\n        image 'nginx:1.20.0' // This version has known CVEs\n    }\n}",
+    "cvss_score": "Varies (Often High-Critical)",
+    "cvss_vector": "Varies based on the specific CVE found."
+  },
+  {
+  "rule_id": "JENKINS-BP-02",
+  "title": "Unmasked Secrets in Logs",
+  "source": "General Security Best Practices",
+  "description": "This weakness occurs when a shell step (`sh`) prints a command that includes a resolved secret. This is especially dangerous for secrets that are hardcoded or passed via insecure parameters.",
+  "risk": "Exposing secrets in build logs is a critical information disclosure risk, as logs are often archived and may not be as secure as the Jenkins credentials store.",
+  "jenkins_remediation": "For secrets injected with `withCredentials`, Jenkins provides automatic masking for the console output, but the command itself can still be logged. For maximum security, use `set +x` at the beginning of your shell script to prevent the command from being echoed. Example: `sh 'set +x; my_command --password=${MY_SECRET}'`",
+  "code_example": "steps {\n    sh 'echo \"Deploying with password=MySuperSecret\"' // This is a clear violation\n}",
+  "cvss_score": "7.5 (High)",
+  "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+  }, 
+  {
+    "rule_id": "OWASP-CICD-07",
+    "title": "Use of Un-trusted Third-Party Dependencies",
+    "source": "OWASP CI/CD #7 - Poisoned Pipeline Execution",
+    "description": "This weakness occurs when the pipeline pulls dependencies from public, unverified sources, or fails to pin a dependency to a specific, immutable version (like a Docker image digest).",
+    "risk": "An attacker could perform a supply chain attack by publishing a malicious version of a public dependency. If the pipeline pulls `image:latest`, it could unknowingly execute the attacker's malicious code.",
+    "jenkins_remediation": "Whenever possible, use a private, trusted registry. For public Docker images, always pin the version to a specific digest (`@sha256:...`) instead of a mutable tag like `latest`.",
+    "code_example": "agent {\n    docker {\n        image 'nginx:latest'\n    }\n}",
+    "cvss_score": "9.1 (Critical)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:N/SA:N"
+  },
+  {
+    "rule_id": "APPSEC-LOGIC-01",
+    "title": "Bypassable Security Gates",
+    "source": "CI/CD Security Best Practices",
+    "description": "This logical weakness occurs when a critical security stage has a `when` condition that is too permissive, allowing it to be easily bypassed.",
+    "risk": "If a security scanning stage can be skipped, a developer could merge vulnerable code into the main branch without it ever being checked, undermining the purpose of the security gate.",
+    "jenkins_remediation": "Ensure that critical security stages have strict `when` conditions that cannot be easily bypassed. Avoid using parameters to control the execution of security scans.",
+    "code_example": "stage('Security Scan') {\n    when { expression { return params.SKIP_SCAN == 'true' } }\n    steps {\n        sh 'trivy fs .'\n    }\n}",
+    "cvss_score": "8.1 (High)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:H/VA:N/SC:H/SI:N/SA:N"
+  },
+  {
+    "rule_id": "CWE-913",
+    "title": "Insecure Script Approval / Groovy Sandbox Bypass",
+    "source": "Jenkins Security Documentation",
+    "description": "This weakness occurs when a pipeline uses a `script {}` block to execute raw Groovy code that requires the approval of a dangerous method signature in Jenkins's 'In-process Script Approval' system.",
+    "risk": "Approving dangerous method signatures is equivalent to granting administrative control over the Jenkins master itself, leading to a complete and catastrophic system compromise.",
+    "jenkins_remediation": "Avoid using `script {}` blocks whenever possible. If a script block is necessary, do not approve any dangerous or security-sensitive method signatures in the 'In-process Script Approval' section.",
+    "code_example": "steps {\n    script {\n        // Requires approval for a dangerous method\n        def file = new java.io.File('/etc/passwd')\n        println file.text\n    }\n}",
+    "cvss_score": "10.0 (Critical)",
+    "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H"
+  },
+  {
+  "rule_id": "JENKINS-BP-03",
+  "title": "Unused Environment Variable",
+  "source": "General Code Quality Best Practices",
+  "description": "This issue occurs when an environment variable is defined in a global or stage-level `environment` block but is never referenced anywhere else in the pipeline, specifically within `sh` steps or other pipeline directives.",
+  "risk": "While not a direct security vulnerability, unused environment variables indicate stale or misconfigured pipelines. This can lead to confusion for developers, maintenance overhead, and in some cases, the accidental retention of old, sensitive values that were thought to be removed.",
+  "jenkins_remediation": "Review the pipeline script to confirm if the environment variable is truly unused. If it is no longer needed, remove its definition from the `environment` block to keep the pipeline configuration clean and maintainable.",
+  "code_example": "environment {\n    // The value of OLD_CONFIG is never used in any stage.\n    OLD_CONFIG = 'some-legacy-value'\n}",
+  "cvss_score": "2.8 (Low)",
+  "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+ },
+ {
+  "rule_id": "JENKINS-BP-04",
+  "title": "Insecure Service Communication",
+  "source": "CI/CD Security Best Practices",
+  "description": "This weakness occurs when a pipeline step, typically a `sh` command using a tool like `curl` or `wget`, communicates with a service over an unencrypted channel (HTTP instead of HTTPS) or without any form of authentication.",
+  "risk": "Communicating with an internal service over plain HTTP can expose sensitive data to network sniffing attacks. Furthermore, if the endpoint performs a sensitive action (like triggering a deployment) and has no authentication, it can be triggered by any unauthorized process on the same network segment as the Jenkins agent, leading to unauthorized deployments or other actions.",
+  "jenkins_remediation": "Always use encrypted channels (HTTPS) for all network communication. Ensure that any service endpoint that performs a sensitive action is protected by a robust authentication mechanism. Secrets for authentication should be stored in and injected via the Jenkins Credentials Plugin. Example of a more secure call: `withCredentials([string(credentialsId: 'deploy-token', variable: 'TOKEN')]) { sh 'curl -H \"Authorization: Bearer $TOKEN\" https://secure-service.local/deploy' }`",
+  "code_example": "steps {\n    sh 'curl -X POST http://insecure-service.local/deploy'\n}",
+  "cvss_score": "5.5 (Medium)",
+  "cvss_vector": "CVSS:4.0/AV:A/AC:L/AT:N/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+ }
+
+
+
+
+  
+]

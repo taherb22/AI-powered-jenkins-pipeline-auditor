@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 from typing import List, Any, Dict 
 from ai_powered_jenkins_auditor.models.stage import Stage
@@ -34,3 +32,17 @@ class Pipeline:
             "post": self.post,
             "findings": self.findings 
         }
+    
+    def to_llm_context(self) -> Dict:
+        """
+        Converts the Pipeline object into a dictionary specifically for providing
+        context to an LLM. It explicitly excludes the 'findings' attribute.
+        """
+        return {
+            "agent": self.agent,
+            "stages": [stage.to_dict() for stage in self.stages], 
+            "environment": self.environment,
+            "post": self.post
+            # Note: The 'findings' attribute is intentionally omitted.
+        } 
+        
