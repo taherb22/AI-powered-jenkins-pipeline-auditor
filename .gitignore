@@ -1,0 +1,4 @@
+.env
+audit_reports
+poetry.lock
+pyproject.toml

@@ -9,7 +9,7 @@ packages = [{include = "ai_powered_jenkins_auditor"}]
 
 [tool.poetry.dependencies]
 python = "3.11.9"
-tree-sitter = "^0.24.0" 
+tree-sitter = "^0.24.0"
 tree-sitter-groovy = "^0.1.2"
 flask = "^3.1.1"
 pyngrok = "^7.2.12"
@@ -17,6 +17,16 @@ python-dotenv = "^1.1.1"
 presidio-analyzer = "^2.2.359"
 presidio-anonymizer = "^2.2.359"
 gunicorn = "^23.0.0"
+langchain-core = "^0.3.72"
+pydantic = "^2.11.7"
+langchain-community = "^0.3.27"
+langgraph = "^0.6.0"
+langchain-groq = "^0.3.6"
+langchain-tavily = "^0.2.11"
+fastapi = "^0.116.1"
+uvicorn = "^0.35.0"
+
+
 
 
 [tool.poetry.group.dev.dependencies]
