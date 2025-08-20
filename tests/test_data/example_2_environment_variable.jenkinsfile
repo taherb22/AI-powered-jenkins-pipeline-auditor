@@ -1,0 +1,13 @@
+pipeline {
+    agent any
+    environment {
+        BUILD_MODE = 'release'
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'make build'
+            }
+        }
+    }
+}

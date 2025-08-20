@@ -1,0 +1,21 @@
+pipeline {
+    agent any
+    stages { 
+        stage('Test') { 
+            steps { 
+                sh 'pytest' 
+            } 
+        } 
+    }
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            mail to: 'dev-team@example.com', subject: 'Build Failed'
+        }
+    }
+}

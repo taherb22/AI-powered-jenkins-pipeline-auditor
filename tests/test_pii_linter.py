@@ -3,7 +3,7 @@ import pytest
 from ai_powered_jenkins_auditor.models.pipeline import Pipeline
 from ai_powered_jenkins_auditor.models.stage import Stage
 # We import the class we are testing
-from ai_powered_jenkins_auditor.linters.pii_linter import PiiLinter
+from ai_powered_jenkins_auditor.jenkins_files_parser.linters.pii_linter import PiiLinter
 
 @pytest.fixture
 def pii_linter():

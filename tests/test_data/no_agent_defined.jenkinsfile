@@ -1,0 +1,11 @@
+pipeline {
+    // No top-level agent
+    stages {
+        stage('Build') {
+            agent { label 'docker-worker' } // Agent is defined at the stage level
+            steps {
+                sh 'echo "Building..."'
+            }
+        }
+    }
+}

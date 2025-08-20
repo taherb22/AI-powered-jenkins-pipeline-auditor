@@ -1,0 +1,12 @@
+pipeline {
+    agent {
+        label 'ubuntu-22.04'
+    }
+    stages { 
+        stage('dummy') { 
+            steps { 
+                echo 'hello' 
+            } 
+        } 
+    }
+}

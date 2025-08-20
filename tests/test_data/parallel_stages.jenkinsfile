@@ -1,0 +1,15 @@
+pipeline {
+    agent none
+    stages {
+        stage('Parallel Tests') {
+            parallel {
+                stage('Unit Tests') {
+                    steps { sh 'mvn test' }
+                }
+                stage('Integration Tests') {
+                    steps { sh 'mvn verify' }
+                }
+            }
+        }
+    }
+}
