@@ -1,0 +1,23 @@
+# Use exact Python version
+FROM python:3.11.9-slim
+
+# Install Poetry
+RUN pip install --no-cache-dir poetry
+
+# Set working directory
+WORKDIR /app
+
+# Copy Poetry files first (for caching)
+COPY pyproject.toml poetry.lock ./
+
+# Install dependencies without installing the app itself
+RUN poetry install --no-root --no-interaction --no-ansi
+
+# Copy the application code
+COPY . .
+
+# Expose app port
+EXPOSE 8000
+
+# Run the app with Poetry
+CMD ["poetry", "run", "python", "app.py"]
