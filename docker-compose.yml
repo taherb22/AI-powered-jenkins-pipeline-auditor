@@ -1,0 +1,23 @@
+services:
+  app:
+    build:
+      context: ./app
+    container_name: python_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    env_file:
+      - .env
+    command: ["poetry", "run", "python", "app.py"]
+    depends_on:
+      - ngrok
+
+  ngrok:
+    image: ngrok/ngrok
+    container_name: ngrok_tunnel
+    command: http app:8000
+    ports:
+      - "4040:4040"
+    env_file:
+      - .env
